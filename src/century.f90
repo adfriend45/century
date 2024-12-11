@@ -392,10 +392,14 @@ write (*,'(a101)') '  kyr    Surf_str    Soil_str    Soil_act    Surf_act&
 write (*,'(a101)') '  kyr           1           2           3           4&
 &           5           6           7           8'
 !----------------------------------------------------------------------!
-write (*,*) fol_LN, Fm
+!write (*,*) fol_LN, Fm
+write (*,*) 'Total C'
 write (*,*) Surf_met + Surf_str_lig + Surf_str_cel + Soil_met + &
             Soil_str_lig + Soil_str_cel + Surf_act + Soil_act + Slow + &
 	    Passive
+write (*,*) 'C in litter pools'
+write (*,*) Surf_str_lig, Surf_str_cel
+write (*,*) Soil_str_lig, Soil_str_cel
 write (*,*) "Century has finished..."
 !----------------------------------------------------------------------!
 end program century
