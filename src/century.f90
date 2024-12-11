@@ -3,7 +3,7 @@ program century
 !----------------------------------------------------------------------!
 implicit none
 !----------------------------------------------------------------------!
-integer, parameter :: nyr = 1000
+integer, parameter :: nyr = 10000
 !----------------------------------------------------------------------!
 ! Surface litter N (fraction of DM)
 !----------------------------------------------------------------------!
@@ -73,7 +73,7 @@ real, parameter :: f_surf_act_slow = 0.6
 !----------------------------------------------------------------------!
 real, parameter :: f_soil_str_lig_slow = 0.3
 !----------------------------------------------------------------------!
-! Fraction of root litter structural cellulose pool respires on decay
+! Fraction of root litter structural cellulose pool respired on decay
 ! to soil active pool.
 !----------------------------------------------------------------------!
 real, parameter :: f_soil_str_cel_act = 0.55
@@ -81,6 +81,10 @@ real, parameter :: f_soil_str_cel_act = 0.55
 ! Fraction of surface metabolic pool respired on decay (fraction)
 !----------------------------------------------------------------------!
 real, parameter :: f_surf_met = 0.6
+!----------------------------------------------------------------------!
+! Fraction of soil metabolic pool respired on decay (fraction)
+!----------------------------------------------------------------------!
+real, parameter :: f_soil_met = 0.55
 !----------------------------------------------------------------------!
 ! Fraction of slow pool respired on decay to passive pool (fraction
 !----------------------------------------------------------------------!
@@ -132,6 +136,7 @@ real :: CAP
 real :: Ft
 real :: A
 real :: LC
+real :: Tm
 !----------------------------------------------------------------------!
 integer :: kyr
 integer :: kday
@@ -141,15 +146,15 @@ write (*,*) "Century has started..."
 ! Initial soil organic matter values (kg[C]/m2).
 !----------------------------------------------------------------------!
 Surf_met = 0.0  ! Surface metabolic
-Surf_str_lig = fol_lig * 0.5         ! Surface structural lignin
-Surf_str_cel = (1.0 - fol_lig) * 0.5 ! Surface structural cellulose
+Surf_str_lig = fol_lig * 0.0!0.5         ! Surface structural lignin
+Surf_str_cel = (1.0 - fol_lig) * 0.0!0.5 ! Surface structural cellulose
 Soil_met = 0.0  ! Soil metabolic
-Soil_str_lig = fro_lig * 0.5         ! Soil structural lignin
-Soil_str_cel = (1.0 - fro_lig) * 0.5 ! Soil structural cellulose
-Surf_act = 0.04 ! Surface active (microbe)
-Soil_act = 0.3  ! Soil active (microbe)
-Slow     = 5.0  ! Slow
-Passive  = 8.0  ! Passive
+Soil_str_lig = fro_lig * 0.0!0.5         ! Soil structural lignin
+Soil_str_cel = (1.0 - fro_lig) * 0.0!0.5 ! Soil structural cellulose
+Surf_act = 0.0!0.04 ! Surface active (microbe)
+Soil_act = 0.0!0.3  ! Soil active (microbe)
+Slow     = 0.0!5.0  ! Slow
+Passive  = 0.0!8.0  ! Passive
 !----------------------------------------------------------------------!
 do kyr = 1, nyr
   do kday = 1, 365
@@ -160,7 +165,7 @@ do kyr = 1, nyr
     !------------------------------------------------------------------!
     ! Surface input (kg[C]/m2/day)
     !------------------------------------------------------------------!
-    L_fol = 1.0 / 365.0
+    L_fol = 0.8 / 365.0
     !------------------------------------------------------------------!
     ! Surface litter lignin/N (ratio)
     !------------------------------------------------------------------!
@@ -184,7 +189,7 @@ do kyr = 1, nyr
     !------------------------------------------------------------------!
     ! Root litter input (kg[C]/m2/day)
     !------------------------------------------------------------------!
-    L_fro = 0.2 / 365.0
+    L_fro = 0.3 / 365.0
     !------------------------------------------------------------------!
     ! Root lignin/N (ratio)
     !------------------------------------------------------------------!
@@ -220,7 +225,7 @@ do kyr = 1, nyr
     !------------------------------------------------------------------!
     ! Decay of surface metabolic litter pool (kg[C]/m2/yr)
     !------------------------------------------------------------------!
-    Surf_met_lose = A * (k5 / 365.0) * Surf_met
+    Surf_met_lose = (k5 / 365.0) * A * Surf_met
     !------------------------------------------------------------------!
     ! Remove decay from surface structural lignin litter pool
     !------------------------------------------------------------------!
@@ -248,7 +253,7 @@ do kyr = 1, nyr
     !------------------------------------------------------------------!
     ! Decay of surface metabolic litter pool (kg[C]/m2/yr)
     !------------------------------------------------------------------!
-    Soil_met_lose = A * (k6 / 365.0) * Soil_met
+    Soil_met_lose = (k6 / 365.0) * A * Soil_met
     !------------------------------------------------------------------!
     ! Remove decay from surface metabolic pool
     !------------------------------------------------------------------!
@@ -286,9 +291,13 @@ do kyr = 1, nyr
     !------------------------------------------------------------------!
     Soil_act = Soil_act + (1.0 - f_soil_str_cel_act) * Soil_str_cel_lose
     !------------------------------------------------------------------!
+    ! Add flux from soil metabolic litter to soil active pool.
+    !------------------------------------------------------------------!
+    Soil_act = Soil_act + (1.0 - f_soil_met) * Soil_met_lose
+    !------------------------------------------------------------------!
     ! Decay of surface active pool.
     !------------------------------------------------------------------!
-    Surf_act_lose = A * (k4 / 365.0) * Surf_act
+    Surf_act_lose = (k4 / 365.0) * A * Surf_act
     !------------------------------------------------------------------!
     ! Remove decay from surface active pool.
     !------------------------------------------------------------------!
@@ -300,7 +309,7 @@ do kyr = 1, nyr
     !------------------------------------------------------------------!
     ! Decay of slow pool.
     !------------------------------------------------------------------!
-    Slow_lose = A * (k7 / 365.0) * Slow
+    Slow_lose = (k7 / 365.0) * A * Slow
     !------------------------------------------------------------------!
     ! Remove decay from slow pool.
     !------------------------------------------------------------------!
@@ -322,9 +331,13 @@ do kyr = 1, nyr
     !------------------------------------------------------------------!
     Soil_act = Soil_act + CSA * Slow_lose
     !------------------------------------------------------------------!
+    ! Texture control on soil active pool decay.
+    !------------------------------------------------------------------!
+    Tm = (1.0 - 0.75) * T
+    !------------------------------------------------------------------!
     ! Decay of soil active pool.
     !------------------------------------------------------------------!
-    Soil_act_lose = A * (k3 / 365.0) * Soil_act
+    Soil_act_lose = (k3 / 365.0) * A * Tm * Soil_act
     !------------------------------------------------------------------!
     ! Remove decay from soil active pool.
     !------------------------------------------------------------------!
@@ -332,7 +345,7 @@ do kyr = 1, nyr
     !------------------------------------------------------------------!
     ! Decay of passive pool.
     !------------------------------------------------------------------!
-    Passive_lose = A * (k8 / 365.0) * passive
+    Passive_lose = (k8 / 365.0) * A * passive
     !------------------------------------------------------------------!
     ! Remove decay from passive pool.
     !------------------------------------------------------------------!
